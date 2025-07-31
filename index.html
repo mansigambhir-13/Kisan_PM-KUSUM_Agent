@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM-KUSUM Voice Agent - Female Hinglish Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.agent {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .message.agent .message-content {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.user .message-content {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            border-bottom-right-radius: 5px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 10px;
+        }
+
+        .agent .avatar {
+            background: #2196f3;
+            color: white;
+        }
+
+        .user .avatar {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .controls {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #2196f3;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .play-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #c62828;
+        }
+
+        .typing {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .controls {
+                padding: 15px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 PM-KUSUM Voice Agent</h1>
+            <p>Natural Female Hinglish Assistant for Solar Pump Scheme</p>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="status" id="status">
+                👋 Press "Start Conversation" to begin talking with our female agent about PM-KUSUM scheme
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Type your message in Hindi-English..." disabled>
+                <button class="btn btn-primary" id="sendBtn" disabled>
+                    📤 Send
+                </button>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="btn btn-success" id="startBtn">
+                    🎙️ Start Conversation
+                </button>
+                <button class="btn btn-secondary" id="voiceBtn" disabled>
+                    🎤 Voice Input
+                </button>
+                <button class="btn btn-primary" id="recordBtn" style="display: none;">
+                    ⏹️ Stop Recording
+                </button>
+            </div>
+            
+            <div class="status" id="voiceStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        class VoiceAgent {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.isRecording = false;
+                this.conversationStarted = false;
+                
+                this.initializeElements();
+                this.attachEventListeners();
+                this.checkMicrophonePermission();
+            }
+            
+            initializeElements() {
+                this.chatContainer = document.getElementById('chatContainer');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.startBtn = document.getElementById('startBtn');
+                this.voiceBtn = document.getElementById('voiceBtn');
+                this.recordBtn = document.getElementById('recordBtn');
+                this.status = document.getElementById('status');
+                this.voiceStatus = document.getElementById('voiceStatus');
+            }
+            
+            attachEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startConversation());
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.voiceBtn.addEventListener('click', () => this.startRecording());
+                this.recordBtn.addEventListener('click', () => this.stopRecording());
+                
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+            }
+            
+            async checkMicrophonePermission() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    this.voiceStatus.textContent = '✅ Microphone ready for voice input';
+                } catch (error) {
+                    this.voiceStatus.textContent = '⚠️ Microphone access needed for voice input';
+                }
+            }
+            
+            async startConversation() {
+                this.showTyping();
+                this.startBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'start'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.hideTyping();
+                        this.addMessage(data.text, 'agent', data.audio);
+                        this.conversationStarted = true;
+                        this.enableControls();
+                        this.status.textContent = '💬 Conversation started! You can type or use voice input.';
+                    } else {
+                        throw new Error(data.error || 'Failed to start conversation');
+                    }
+                } catch (error) {
+                    this.hideTyping();
+                    this.showError('Failed to start conversation: ' + error.message);
+                    this.startBtn.disabled = false;
+                }
+            }
+            
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+                
+                this.addMessage(message, 'user');
+                this.messageInput.value = '';
+                this.showTyping();
+                this.disableControls();
+                
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'text_response',
+                            message: message
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.hideTyping();
+                        this.addMessage(data.text, 'agent', data.audio);
+                        this.enableControls();
+                    } else {
+                        throw new Error(data.error || 'Failed to get response');
+                    }
+                } catch (error) {
+                    this.hideTyping();
+                    this.showError('Failed to send message: ' + error.message);
+                    this.enableControls();
+                }
+            }
+            
+            async startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+                    
+                    this.mediaRecorder.onstop = () => {
+                        this.processVoiceInput();
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    
+                    this.voiceBtn.style.display = 'none';
+                    this.recordBtn.style.display = 'inline-flex';
+                    this.recordBtn.classList.add('recording');
+                    this.voiceStatus.textContent = '🔴 Recording... Speak clearly in Hindi-English';
+                    
+                } catch (error) {
+                    this.showError('Failed to start recording: ' + error.message);
+                }
+            }
+            
+            stopRecording() {
+                if (this.mediaRecorder && this.isRecording) {
+                    this.mediaRecorder.stop();
+                    this.isRecording = false;
+                    
+                    this.recordBtn.style.display = 'none';
+                    this.voiceBtn.style.display = 'inline-flex';
+                    this.recordBtn.classList.remove('recording');
+                    this.voiceStatus.textContent = '🧠 Processing your voice...';
+                }
+            }
+            
+            async processVoiceInput() {
+                this.showTyping();
+                this.disableControls();
+                
+                try {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const audioHex = Array.from(new Uint8Array(arrayBuffer))
+                        .map(b => b.toString(16).padStart(2, '0')).join('');
+                    
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'voice_response',
+                            audio: audioHex
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.hideTyping();
+                        
+                        if (data.transcript) {
+                            this.addMessage(data.transcript, 'user');
+                            this.addMessage(data.text, 'agent', data.audio);
+                            this.voiceStatus.textContent = '✅ Voice understood successfully!';
+                        } else {
+                            this.showError('Could not understand your voice. Please try typing instead.');
+                            this.voiceStatus.textContent = '❌ Voice not recognized. Try speaking clearly.';
+                        }
+                        
+                        this.enableControls();
+                    } else {
+                        throw new Error(data.error || 'Failed to process voice');
+                    }
+                } catch (error) {
+                    this.hideTyping();
+                    this.showError('Failed to process voice: ' + error.message);
+                    this.voiceStatus.textContent = '❌ Voice processing failed';
+                    this.enableControls();
+                }
+            }
+            
+            addMessage(text, sender, audioHex = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = sender === 'agent' ? '🤖' : '👨‍🌾';
+                
+                const content = document.createElement('div');
+                content.className = 'message-content';
+                content.textContent = text;
+                
+                if (sender === 'agent') {
+                    messageDiv.appendChild(avatar);
+                    messageDiv.appendChild(content);
+                } else {
+                    messageDiv.appendChild(content);
+                    messageDiv.appendChild(avatar);
+                }
+                
+                // Add audio player for agent messages
+                if (audioHex && sender === 'agent') {
+                    const audioPlayer = this.createAudioPlayer(audioHex);
+                    content.appendChild(audioPlayer);
+                }
+                
+                this.chatContainer.appendChild(messageDiv);
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            createAudioPlayer(audioHex) {
+                const audioContainer = document.createElement('div');
+                audioContainer.style.marginTop = '10px';
+                
+                const playButton = document.createElement('button');
+                playButton.className = 'play-btn';
+                playButton.innerHTML = '▶️';
+                playButton.title = 'Play agent voice';
+                
+                playButton.addEventListener('click', () => {
+                    try {
+                        const audioBytes = new Uint8Array(
+                            audioHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+                        );
+                        
+                        const audioBlob = new Blob([audioBytes], { type: 'audio/mpeg' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        
+                        audio.play();
+                        
+                        audio.onended = () => {
+                            URL.revokeObjectURL(audioUrl);
+                        };
+                        
+                    } catch (error) {
+                        console.error('Failed to play audio:', error);
+                    }
+                });
+                
+                audioContainer.appendChild(playButton);
+                return audioContainer;
+            }
+            
+            showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message agent';
+                typingDiv.id = 'typing';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = '🤖';
+                
+                const content = document.createElement('div');
+                content.className = 'message-content typing';
+                content.innerHTML = `
+                    Female agent is thinking...
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                typingDiv.appendChild(avatar);
+                typingDiv.appendChild(content);
+                this.chatContainer.appendChild(typingDiv);
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            hideTyping() {
+                const typingDiv = document.getElementById('typing');
+                if (typingDiv) {
+                    typingDiv.remove();
+                }
+            }
+            
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                this.chatContainer.appendChild(errorDiv);
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+            
+            enableControls() {
+                if (this.conversationStarted) {
+                    this.messageInput.disabled = false;
+                    this.sendBtn.disabled = false;
+                    this.voiceBtn.disabled = false;
+                }
+            }
+            
+            disableControls() {
+                this.messageInput.disabled = true;
+                this.sendBtn.disabled = true;
+                this.voiceBtn.disabled = true;
+            }
+        }
+        
+        // Initialize the voice agent when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceAgent();
+        });
+    </script>
+</body>
+</html>
